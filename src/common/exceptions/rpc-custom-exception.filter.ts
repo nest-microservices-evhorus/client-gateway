@@ -6,16 +6,26 @@ import { Response } from 'express';
 export class RpcCustomExceptionFilter implements ExceptionFilter {
   catch(exception: RpcException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    console.log();
     const response: Response = ctx.getResponse();
 
     const rpcError = exception.getError();
 
+    console.log(rpcError.toString());
+
+    if (rpcError.toString().includes('Empty response')) {
+      return response.status(500).json({
+        status: 500,
+        message: rpcError
+          .toString()
+          .substring(0, rpcError.toString().indexOf('(') - 1),
+      });
+    }
+
     if (
       typeof rpcError === 'object' &&
       'status' in rpcError &&
-      typeof rpcError.status === 'number' &&
-      'message' in rpcError
+      'message' in rpcError &&
+      typeof rpcError.status === 'number'
     ) {
       return response.status(rpcError.status).json(rpcError);
     }
